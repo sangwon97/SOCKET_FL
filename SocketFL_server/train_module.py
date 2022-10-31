@@ -1,14 +1,14 @@
 import torch
 from torch.utils.data import random_split, DataLoader
 
-rounds = 10
+rounds = 5
 batch_size = 128
-epochs_per_client = 3
+epochs_per_client = 10
 learning_rate = 2e-2
 
 def get_device():
-    # return torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
-    return torch.device('cpu')
+    return torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
+    # return torch.device('cpu')
 def to_device(data, device):
     if isinstance(data, (list, tuple)):
         return [to_device(x, device) for x in data]

@@ -1,4 +1,5 @@
 import socket
+import sys
 import pickle
 import datetime
 from _thread import *
@@ -13,7 +14,7 @@ train_dataset, dev_dataset = random_split(train_dataset, [int(len(train_dataset)
 
 # Variable Set
 client_sockets = []
-max_client = 2
+max_client = 5
 client_count = 0
 current_round = 1
 learn_flag = False
@@ -22,7 +23,7 @@ HOST = '168.131.154.188'
 PORT = 8080
 
 total_train_size = 49800
-fraction = (total_train_size // max_client) // total_train_size
+fraction = (total_train_size / max_client) / total_train_size
 
 # server socket create
 print(">> Server Start ")
@@ -38,7 +39,7 @@ new_parameters = dict([(layer_name, {'weight': 0, 'bias': 0}) for layer_name in 
 
 
 def encodeParams(parameter) :
-    return pickle.dumps(parameter)
+    return pickle.dumps(parameter, -1)
 
 def decodeParams(parameter) :
     return pickle.loads(parameter)
@@ -48,26 +49,32 @@ def threaded(client_socket, addr) :
     global learn_flag
     global global_net
     global curr_parameters
+    global new_parameters
+
     current_parameter = curr_parameters
+    buffer = b''
 
     print("[{}] || Connected by : <{}|{}>".format(datetime.datetime.now(), addr[0], addr[1]))
 
     client_socket.send(encodeParams(current_parameter))
+
     print("[{}] >> Send Init parameters to <{}|{}>".format(datetime.datetime.now(), addr[0],  addr[1]))
 
     while True:
         try:   
             if not learn_flag :
-                data = client_socket.recv(524288)        
+                data = client_socket.recv(300000)
+                buffer += data
+                if (sys.getsizeof(buffer) > 265000):  
 
-                if data:            
-                    print("[{}] << Recive local parameters from <{}|{}>".format(datetime.datetime.now(), addr[0],  addr[1]))
-                    client_parameters = decodeParams(data)
+                    print("[{}] << Recive local parameters from <{}|{}> | size : {}".format(datetime.datetime.now(), addr[0],  addr[1], sys.getsizeof(buffer)))
+                    client_parameters = decodeParams(buffer)
                     for layer_name in client_parameters:
                         new_parameters[layer_name]['weight'] += fraction * client_parameters[layer_name]['weight']
                         new_parameters[layer_name]['bias'] += fraction * client_parameters[layer_name]['bias']
-
+                    print("[{}:{}]의 파라미터 적용 완료".format(addr[0],  addr[1]))
                     client_count += 1
+                    buffer = b''
 
         except ConnectionResetError as e:
             print("[{}] | Disconnected by : <{}|{}>".format(datetime.datetime.now(), addr[0], addr[1]))
@@ -94,7 +101,7 @@ def globalLearning() :
             global_net.apply_parameters(new_parameters) 
             train_loss, train_acc = global_net.evaluate(train_dataset)
             dev_loss, dev_acc = global_net.evaluate(dev_dataset)
-            print('After round {}, train_loss = {}, dev_loss = {}, dev_acc = {}\n'.format(i + 1, round(train_loss, 4), round(dev_loss, 4), round(dev_acc, 4)))
+            print('After round {}, train_loss = {}, train_acc = {}, dev_loss = {}, dev_acc = {}\n'.format(current_round, round(train_loss, 4), round(train_acc, 4), round(dev_loss, 4), round(dev_acc, 4)))
             history.append((train_loss, dev_loss))
 
             print("[{}] || Global train done.".format(datetime.datetime.now()))
@@ -106,12 +113,14 @@ def globalLearning() :
             current_round += 1
             learn_flag = False
 
-            for client in client_sockets :
-                client.send(encodeParams(curr_parameters))
+            if (current_round > 5) :
+                print(">> 최종 라운드 학습 완료, 탈출하겠습니다.")
+                break
+            else :
+                for client in client_sockets :
+                    client.send(encodeParams(curr_parameters))
 
-        if (current_round > 3) :
-            print(">> 최종 라운드 학습 완료, 탈출하겠습니다.")
-            break
+        
     
     print(">>>>>> Thread 종료!")
 
