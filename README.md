@@ -3,11 +3,25 @@
 
 각 서버와 클라이언트 로컬 환경에 SocketFL_server 내의 파일들과 SocketFL_client 내의 파일들을 담으시고
 
-server의 가상환경에서는 
+**(server의 가상환경)**
 
-```python socket_server.py``` or ```python3 socket_server.py```
+먼저 socket_server.py 내에 max_client 수를 조정하시고 
 
-client의 가상환경에서는 
+```python socket_server.py``` or ```python3 socket_server.py``` 를 입력하세요.
+
+**(client의 가상환경)**
+
+data.download.py 에서 최대 client 숫자를 조정하시고
+
+먼저 ```python data_download.py``` or ```python3 data_download.py```를 입력해주세요.
+
+그러면 data_tensor/ 폴더에 각 클라이언트들에게 할당할 데이터가 저장됩니다.
+
+본 데이터들을 AWS나 외부 서버에 각각 할당해주시면 됩니다.
+
+각 클라이언트마다 할당된 데이터와 모든 코드 파일을 포함하게 하면 됩니다.
+
+그리고
 
 ```python learning_client.py``` or ```python3 learning_client.py``` 를 입력해주세요.
 
