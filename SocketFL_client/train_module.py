@@ -5,9 +5,9 @@ total_train_size = 49800
 total_test_size = 10000
 total_dev_size = 10200
 
-rounds = 10
+rounds = 5
 batch_size = 128
-epochs_per_client = 3
+epochs_per_client = 10
 learning_rate = 2e-2
 
 def get_device():
@@ -102,7 +102,7 @@ class FederatedNet(torch.nn.Module):
                 accs.append(acc)
             avg_loss = torch.stack(losses).mean().item()
             avg_acc = torch.stack(accs).mean().item()            
-            print("[{}/{}] loss : {}, acc : {}".format(epoch+1, epochs, avg_loss, avg_acc))
+            print("[{}/{}] loss : {} acc : {}".format(str(epoch+1).zfill(2), epochs, avg_loss, avg_acc))
             history.append((avg_loss, avg_acc))
         return history
     
